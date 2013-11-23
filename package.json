@@ -1,0 +1,25 @@
+{
+  "author": {
+    "name": "Rashid Khan",
+    "company": "Elasticsearch BV"
+  },
+  "name": "scratchy",
+  "version": "3.0.0pre-milestone5",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/rashidkpc/scratchy.git"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "load-grunt-tasks": "~0.2.0",
+    "optimist": "~0.6.0",
+    "grunt-contrib-jshint": "~0.7.2",
+    "grunt-shell": "~0.6.0",
+    "underscore": "~1.5.2",
+    "glob": "~3.2.7",
+    "underscore.string": "~2.3.3",
+    "mkdirp": "~0.3.5",
+    "grunt-contrib-clean": "~0.5.0"
+  },
+  "license": "Apache License"
+}
