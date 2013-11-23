@@ -61,9 +61,6 @@ reading right now:
  scratchy -uo docs -p scratchy
 
 Scratchy is extracting documentation from itself! Spooky.
-If you're wondering what those switches
-do, see the link:../usage.html[Command Line reference]
-
 
 == Post-Processing ==
 
