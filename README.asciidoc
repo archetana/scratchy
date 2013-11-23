@@ -4,6 +4,8 @@ Rashid Khan
 v0.1, 2013-11-18
 :doctype: article
 
+NOTE: For more information, as well as usage and commandline switches, see the docs/ directory.
+
 [preface]
 == The Scratchy Way ==
 Scratchy is a simple system for extracting user focused documentation from code. Scratch is not
@@ -77,6 +79,3 @@ the option of extracting it to HTML, PDF, ePub, and a host of other formats. Her
 we use to post process Scratchy's output:
 
   find docs -type file | xargs -L 1 asciidoc -a numbered -b html5 -a icons -a toc2
-
-
-NOTE: For more information, as well as usage and commandline switches, see the docs/ directory.
