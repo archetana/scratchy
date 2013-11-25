@@ -25,6 +25,7 @@ var
   glob      = require("glob"),
   fs        = require('fs'),
   mkdirp    = require('mkdirp'),
+  files     = [],
   docs      = {};
 
   // Bring in underscore string functions
@@ -61,120 +62,123 @@ module.exports.extract = function (argv) {
       argv[prop] = _d[prop];
     }
   }
-  glob(argv.pattern, null, function (er, files) {
-    var counter = files.length;
-    console.log(files.length+ " paths matched. Processing.");
-    _.each(files,function(file,i) {
 
-      // Make sure the path is a file and not a directory or something else weird
-      if(!fs.lstatSync(file).isFile()) {
+  files = _.flatten(_.map(_.flatten([argv.pattern]),function(pattern) {
+    return glob.sync(pattern);
+  }));
+  var counter = files.length;
+
+  console.log(files.length+ " paths matched. Processing.");
+  _.each(files,function(file,i) {
+
+    // Make sure the path is a file and not a directory or something else weird
+    if(!fs.lstatSync(file).isFile()) {
+      return;
+    }
+
+    var fileLines = fs.readFileSync(file).toString().split('\n'),
+     inBlock = false,
+     path,
+     order;
+
+    _.each(fileLines,function(line) {
+      // This is pause slow, but doing this entirely async isn't reliable
+      // Plus it causes the queue to fill and node to die
+      line = _.ltrim(line);
+      /** @scratch /intro/getting_started/5
+      *
+      * === Scratch tag ===
+      *
+      * Scratchy does not want all of your comments. To denote doc blocks that scratchy should
+      * extract, the opening of your comment should contain the +@scratch+ tag immediately following
+      * the comment opening characters.
+      */
+      if(!inBlock && _(line).startsWith(argv.begin)) {
+        line = line.substring(argv.begin.length);
+        var m = line.match(/@scratch\s+(.*)\/([^\/]*)/);
+        if(m) {
+          inBlock = true;
+          path = m[1];
+          order = m[2];
+          docs[path] = docs[path] || [];
+          docs[path][order] = docs[path][order] || [];
+        }
+      }
+      else if(inBlock && _(line).startsWith(argv.end)) {
+        line = line.substring(argv.end.length);
+        inBlock = false;
+      }
+      else if(inBlock && _(line).startsWith(argv.line)) {
+        line = line.substring(argv.line.length);
+        if(argv.strip.length > 0 && _(line).startsWith(argv.strip)) {
+          line = line.substring(argv.strip.length);
+        }
+        line = argv.unslash ? line.replace('\\/','/') : line;
+        docs[path][order].push(line+'\n');
+      }
+    });
+    console.log("Processed: "+ file);
+  });
+
+  // Process each path
+  _.each(docs, function(doc,path) {
+    pathParts = path.match(/(.*)\/([^\/]*)/);
+    var fsPath = argv.output+pathParts[1]+'/'+pathParts[2]+argv.extension;
+    /** @scratch /intro/getting_started/7
+     *
+     * ==== Pre-existing files ====
+     *
+     * Scratchy will not overwrite your exist docs, nor will ti append to them or try to merge
+     * them. You will need to move your old docs out of the way. Scratchy will not abort, but
+     * will communicate that it failed to write that path
+     */
+    try {
+      if (fs.statSync(fsPath).isFile()) {
+        console.log(fsPath+' already exists, not overwriting');
         return;
       }
-
-      var fileLines = fs.readFileSync(file).toString().split('\n'),
-       inBlock = false,
-       path,
-       order;
-
-      _.each(fileLines,function(line) {
-        // This is pause slow, but doing this entirely async isn't reliable
-        // Plus it causes the queue to fill and node to die
-        line = _.ltrim(line);
-        /** @scratch /intro/getting_started/5
-        *
-        * === Scratch tag ===
-        *
-        * Scratchy does not want all of your comments. To denote doc blocks that scratchy should
-        * extract, the opening of your comment should contain the +@scratch+ tag immediately following
-        * the comment opening characters.
-        */
-        if(!inBlock && _(line).startsWith(argv.begin)) {
-          line = line.substring(argv.begin.length);
-          var m = line.match(/@scratch\s+(.*)\/([^\/]*)/);
-          if(m) {
-            inBlock = true;
-            path = m[1];
-            order = m[2];
-            docs[path] = docs[path] || [];
-            docs[path][order] = docs[path][order] || [];
-          }
-        }
-        else if(inBlock && _(line).startsWith(argv.end)) {
-          line = line.substring(argv.end.length);
-          inBlock = false;
-        }
-        else if(inBlock && _(line).startsWith(argv.line)) {
-          line = line.substring(argv.line.length);
-          if(argv.strip.length > 0 && _(line).startsWith(argv.strip)) {
-            line = line.substring(argv.strip.length);
-          }
-          line = argv.unslash ? line.replace('\\/','/') : line;
-          docs[path][order].push(line+'\n');
-        }
+    } catch(e) {}
+    /** @scratch /intro/getting_started/6
+     *
+     * === Scratch path ===
+     *
+     * The scratch path tells scratchy where to put the extracted documentation. The path is a
+     * simple directory path, followed by an priority number. For example, +/intro/welcome/2+
+     * would be written to your output directory, in the intro directory, in the 'welcome'
+     * file. It would appear after +/intro/welcome/1+ if it existed. Gaps in
+     * priority numbers are fine, as are duplicates. Of course
+     * order is not guaranteed with duplicate priority numbers.
+    */
+    mkdirp.sync(argv.output+pathParts[1]);
+    var fd = fs.openSync(fsPath, 'a');
+    // within each path, process each chunk
+    _.each(doc,function(part) {
+      // And every line in each chunk
+      _.each(part,function(line){
+        fs.writeSync(fd, line);
       });
-      console.log("Processed: "+ file);
     });
-
-    // Process each path
-    _.each(docs, function(doc,path) {
-      pathParts = path.match(/(.*)\/([^\/]*)/);
-      var fsPath = argv.output+pathParts[1]+'/'+pathParts[2]+argv.extension;
-      /** @scratch /intro/getting_started/7
-       *
-       * ==== Pre-existing files ====
-       *
-       * Scratchy will not overwrite your exist docs, nor will ti append to them or try to merge
-       * them. You will need to move your old docs out of the way. Scratchy will not abort, but
-       * will communicate that it failed to write that path
-       */
-      try {
-        if (fs.statSync(fsPath).isFile()) {
-          console.log(fsPath+' already exists, not overwriting');
-          return;
-        }
-      } catch(e) {}
-      /** @scratch /intro/getting_started/6
-       *
-       * === Scratch path ===
-       *
-       * The scratch path tells scratchy where to put the extracted documentation. The path is a
-       * simple directory path, followed by an priority number. For example, +/intro/welcome/2+
-       * would be written to your output directory, in the intro directory, in the 'welcome'
-       * file. It would appear after +/intro/welcome/1+ if it existed. Gaps in
-       * priority numbers are fine, as are duplicates. Of course
-       * order is not guaranteed with duplicate priority numbers.
-      */
-      mkdirp.sync(argv.output+pathParts[1]);
-      var fd = fs.openSync(fsPath, 'a');
-      // within each path, process each chunk
-      _.each(doc,function(part) {
-        // And every line in each chunk
-        _.each(part,function(line){
-          fs.writeSync(fd, line);
-        });
-      });
-      fs.closeSync(fd);
-    });
-
-    /** @scratch /intro/getting_started/10
-     *
-     * == Post-Processing ==
-     *
-     * Scratchy is designed to promote post processing. Why? Because how can anyone know what format
-     * you will want your documentation in, or for what purpose? Scratchy does not assume you're
-     * writing API docs, nor does it assume that a web browser will be the destination for the
-     * documentation it extracts. How you choose to post process is up to you.
-     *
-     * ==== How does scratchy do it? ====
-     *
-     * Because the documentation for the Scratchy project is in ASCIIDoc, we have
-     * the option of extracting it to HTML, PDF, ePub, and a host of other formats. Here is the command
-     * we use to post process Scratchy's output:
-     *
-     *   find docs -name *.txt | xargs -L 1 asciidoc -a numbered -b html5 -a icons -a toc2 -a theme=scratchy
-     *
-     */
+    fs.closeSync(fd);
   });
+
+  /** @scratch /intro/getting_started/10
+   *
+   * == Post-Processing ==
+   *
+   * Scratchy is designed to promote post processing. Why? Because how can anyone know what format
+   * you will want your documentation in, or for what purpose? Scratchy does not assume you're
+   * writing API docs, nor does it assume that a web browser will be the destination for the
+   * documentation it extracts. How you choose to post process is up to you.
+   *
+   * ==== How does scratchy do it? ====
+   *
+   * Because the documentation for the Scratchy project is in ASCIIDoc, we have
+   * the option of extracting it to HTML, PDF, ePub, and a host of other formats. Here is the command
+   * we use to post process Scratchy's output:
+   *
+   *   find docs -name *.txt | xargs -L 1 asciidoc -a numbered -b html5 -a icons -a toc2 -a theme=scratchy
+   *
+   */
 };
 
 if(require.main === module) {
