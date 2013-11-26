@@ -39,7 +39,8 @@ var _d = {
   line: '*',
   strip: ' ',
   extension: '.txt',
-  unslash: false
+  unslash: false,
+  annotate: false
 };
 
 /** @scratch /intro/getting_started/1
@@ -78,6 +79,8 @@ module.exports.extract = function (argv) {
 
     var fileLines = fs.readFileSync(file).toString().split('\n'),
      inBlock = false,
+     lineNum = 1,
+     noteLine,
      path,
      order;
 
@@ -94,6 +97,7 @@ module.exports.extract = function (argv) {
       * the comment opening characters.
       */
       if(!inBlock && _(line).startsWith(argv.begin)) {
+        noteLine = lineNum;
         line = line.substring(argv.begin.length);
         var m = line.match(/@scratch\s+(.*)\/([^\/]*)/);
         if(m) {
@@ -105,7 +109,9 @@ module.exports.extract = function (argv) {
         }
       }
       else if(inBlock && _(line).startsWith(argv.end)) {
-        line = line.substring(argv.end.length);
+        if(argv.annotate) {
+          docs[path][order].push(argv.annotate+file+':'+noteLine+'\n');
+        }
         inBlock = false;
       }
       else if(inBlock && _(line).startsWith(argv.line)) {
@@ -116,6 +122,7 @@ module.exports.extract = function (argv) {
         line = argv.unslash ? line.replace('\\/','/') : line;
         docs[path][order].push(line+'\n');
       }
+      lineNum += 1;
     });
     console.log("Processed: "+ file);
   });
@@ -261,6 +268,11 @@ if(require.main === module) {
      * Turn \\/ into /
      */
     .alias('u','unslash').describe('u','Convert \\/ to \/')
+    /** @scratch /usage/1
+     * | -a | --annotate | false |
+     * Scratchy can annotate chunks with the position they can be found in code.
+     */
+    .alias('a','annotate').default('a',_d.annotate).describe('a','String with which to annotate chunks')
     /** @scratch /usage/2
      * |=======================================
      */

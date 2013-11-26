@@ -17,9 +17,10 @@ module.exports = function(grunt) {
     clean : {
       docs: ['<%= docPath %>']
     },
+    // Only do it this way because it feels weird to use grunt-scratchy in this project
     shell : {
       scratchy: {
-        command: './scratchy -x .asciidoc -uo <%= docPath %> -p scratchy',
+        command: './index.js -x .asciidoc -uo <%= docPath %> -p index.js -a "//"',
         options: {
           stdout: true
         }

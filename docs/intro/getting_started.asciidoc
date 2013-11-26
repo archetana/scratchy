@@ -16,6 +16,7 @@ While scratchy doesn't force a particular format, there are some recommendations
 whitespace to deal with indentation. If your formatter requires leading white space it will be
 relative from your +--line+ argument
 
+//index.js:2
 === Documentation Format ===
 
 It is up to you to decide what format you wish to document in. If you were some kind of sadist
@@ -24,12 +25,14 @@ footnote:[Don't do that]
 The Scratchy documentation uses Asciidoc because it serves as a powerful intermediary to many
 other formats, but you could just as easily use something like Markdown.  From there you can use
 whatever tool you'd like to post process them.
+//index.js:46
 
 === Scratch tag ===
 
 Scratchy does not want all of your comments. To denote doc blocks that scratchy should
 extract, the opening of your comment should contain the +@scratch+ tag immediately following
 the comment opening characters.
+//index.js:91
 
 === Scratch path ===
 
@@ -39,12 +42,14 @@ would be written to your output directory, in the intro directory, in the 'welco
 file. It would appear after +/intro/welcome/1+ if it existed. Gaps in
 priority numbers are fine, as are duplicates. Of course
 order is not guaranteed with duplicate priority numbers.
+//index.js:148
 
 ==== Pre-existing files ====
 
 Scratchy will not overwrite your exist docs, nor will ti append to them or try to merge
 them. You will need to move your old docs out of the way. Scratchy will not abort, but
 will communicate that it failed to write that path
+//index.js:134
 
 == Running Scratchy ==
 
@@ -62,6 +67,7 @@ Scratchy is extracting documentation from itself! Spooky.
 If you're wondering what those switches
 do, see the link:../usage.html[Command Line reference]
 
+//index.js:193
 
 == Post-Processing ==
 
@@ -78,3 +84,4 @@ we use to post process Scratchy's output:
 
   find docs -name *.txt | xargs -L 1 asciidoc -a numbered -b html5 -a icons -a toc2 -a theme=scratchy
 
+//index.js:171
