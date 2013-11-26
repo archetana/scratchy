@@ -110,7 +110,7 @@ module.exports.extract = function (argv) {
       }
       else if(inBlock && _(line).startsWith(argv.end)) {
         if(argv.annotate) {
-          docs[path][order].push(argv.annotate+file+':'+noteLine+'\n');
+          docs[path][order].push(argv.annotate+file+':'+noteLine+'\n\n');
         }
         inBlock = false;
       }
