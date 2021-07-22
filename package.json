@@ -4,7 +4,7 @@
     "company": "Elasticsearch BV"
   },
   "name": "scratchy",
-  "version": "3.0.0pre-milestone5",
+  "version": "3.0.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/rashidkpc/scratchy.git"
